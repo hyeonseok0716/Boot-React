@@ -1,3 +1,4 @@
+import useCustomLogin from "../../hooks/useCustomLogin";
 import { useEffect, useState } from "react"
 import  {getOne} from "../../api/todoApi"
 import useCustomMove from "../../hooks/useCustomMove"
@@ -11,6 +12,7 @@ const initState = {
 }
 
 const ReadComponent = ({tno}) => {
+  const {exceptionHandle} = useCustomLogin()
 
   const [todo, setTodo] = useState(initState)
   const [error, setError] = useState('')
@@ -22,8 +24,8 @@ const ReadComponent = ({tno}) => {
     getOne(tno).then(data => {
       console.log(data)
       setTodo(data)
-    }).catch(() => setError('조회하지 못했습니다. 번호를 확인해 주세요.'))
-  }, [tno])
+    }).catch((ex) => { exceptionHandle(ex); setError('조회하지 못했습니다. 번호를 확인해 주세요.') })
+  }, [tno, exceptionHandle])
 
   return (
   <div className = "border-2 border-sky-200 mt-10 m-2 p-4 ">

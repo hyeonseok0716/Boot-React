@@ -1,3 +1,4 @@
+import useCustomLogin from "../../hooks/useCustomLogin";
 import { useEffect, useState } from "react";
 import { getList } from "../../api/productsApi";
 import useCustomMove from "../../hooks/useCustomMove";
@@ -22,6 +23,7 @@ const initState = {
 }
 
 const ListComponent = () => {
+  const {exceptionHandle} = useCustomLogin()
 
   const {page, size, refresh, moveToList, moveToRead} = useCustomMove()
 
@@ -39,9 +41,9 @@ const ListComponent = () => {
       console.log(data)
       setServerData(data)
       setFetching(false)
-    }).catch(() => { setFetching(false); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
+    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
 
-  }, [page,size, refresh])
+  }, [page,size, refresh, exceptionHandle])
 
   return (
     <div className="border-2 border-blue-100 mt-10 mr-2 ml-2">

@@ -1,3 +1,4 @@
+import useCustomLogin from "../../hooks/useCustomLogin";
 import { Outlet, useNavigate } from "react-router-dom";
 import BasicLayout from "../../layouts/BasicLayout";
 import { useCallback } from "react";
@@ -5,6 +6,7 @@ import { useCallback } from "react";
 const IndexPage = () => {
 
   const navigate = useNavigate()
+  const {isLogin, moveToLoginReturn} = useCustomLogin()
 
   const handleClickList = useCallback(() => {
     navigate({ pathname:'list' })
@@ -13,6 +15,8 @@ const IndexPage = () => {
   const handleClickAdd = useCallback(() => {
     navigate({ pathname:'add' })
   }, [navigate])
+
+  if (!isLogin) return moveToLoginReturn()
 
   return ( 
     <BasicLayout>

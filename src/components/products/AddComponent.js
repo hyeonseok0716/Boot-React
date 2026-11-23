@@ -1,3 +1,4 @@
+import useCustomLogin from "../../hooks/useCustomLogin";
 import { useRef, useState } from "react";
 
 import { postAdd } from "../../api/productsApi";
@@ -13,6 +14,7 @@ const initState = {
 }
 
 const AddComponent = () => {
+  const {exceptionHandle} = useCustomLogin()
 
   const [product,setProduct] = useState({...initState})
   const uploadRef = useRef()
@@ -51,7 +53,7 @@ const AddComponent = () => {
     postAdd(formData).then(data=> {
       setFetching(false)
       setResult(data.result)
-    })
+    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('등록하지 못했습니다. 다시 시도해 주세요.') })
   }
 
   const closeModal = () => {

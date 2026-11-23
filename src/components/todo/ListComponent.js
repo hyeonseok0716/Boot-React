@@ -1,3 +1,4 @@
+import useCustomLogin from "../../hooks/useCustomLogin";
 import { useEffect, useState } from "react";
 import { getList } from "../../api/todoApi";
 import useCustomMove from "../../hooks/useCustomMove";
@@ -17,6 +18,7 @@ const initState = {
 }
 
 const ListComponent = () => {
+  const {exceptionHandle} = useCustomLogin()
 
   const {page, size, refresh, moveToList, moveToRead} = useCustomMove()
 
@@ -29,9 +31,9 @@ const ListComponent = () => {
     getList({page,size}).then(data => {
       console.log(data)
       setServerData(data)
-    }).catch(() => setError('목록을 불러오지 못했습니다.'))
+    }).catch((ex) => { exceptionHandle(ex); setError('목록을 불러오지 못했습니다.') })
 
-  }, [page,size, refresh])
+  }, [page,size, refresh, exceptionHandle])
 
   return (
     <div className="border-2 border-blue-100 mt-10 mr-2 ml-2">

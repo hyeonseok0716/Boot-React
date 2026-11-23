@@ -1,3 +1,4 @@
+import useCustomLogin from "../../hooks/useCustomLogin";
 import { useCallback, useEffect, useState } from "react";
 import { deleteOne, getOne, putOne } from "../../api/todoApi";
 
@@ -13,6 +14,7 @@ const initState = {
 }
 
 const ModifyComponent = ({tno, moveList, moveRead}) => {
+  const {exceptionHandle} = useCustomLogin()
 
   const [todo, setTodo] = useState({...initState})
   const [error, setError] = useState('')
@@ -27,7 +29,7 @@ const ModifyComponent = ({tno, moveList, moveRead}) => {
     putOne(todo).then(data => {
       console.log("modify result: " + data)
       setResult('Modified')
-    }).catch(() => setError('수정하지 못했습니다. 입력 내용을 확인해 주세요.'))
+    }).catch((ex) => { exceptionHandle(ex); setError('수정하지 못했습니다. 입력 내용을 확인해 주세요.') })
   }
 
   const handleClickDelete = () => {
@@ -36,7 +38,7 @@ const ModifyComponent = ({tno, moveList, moveRead}) => {
     deleteOne(tno).then( data => {
       console.log("delete result: " + data)
       setResult('Deleted')
-    }).catch(() => setError('삭제하지 못했습니다. 다시 시도해 주세요.'))
+    }).catch((ex) => { exceptionHandle(ex); setError('삭제하지 못했습니다. 다시 시도해 주세요.') })
 
   }
 
@@ -50,9 +52,9 @@ const ModifyComponent = ({tno, moveList, moveRead}) => {
 
   useEffect(() => {
 
-    getOne(tno).then(data => setTodo(data)).catch(() => setError('조회하지 못했습니다. 번호를 확인해 주세요.'))
+    getOne(tno).then(data => setTodo(data)).catch((ex) => { exceptionHandle(ex); setError('조회하지 못했습니다. 번호를 확인해 주세요.') })
 
-  },[tno])
+  },[tno, exceptionHandle])
 
   const handleChangeTodo = (e) => {
 

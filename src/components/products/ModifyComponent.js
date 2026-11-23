@@ -1,3 +1,4 @@
+import useCustomLogin from "../../hooks/useCustomLogin";
 import { useEffect, useRef, useState } from "react";
 import { getOne, putOne, deleteOne } from "../../api/productsApi";
 import FetchingModal from "../common/FetchingModal";
@@ -17,6 +18,7 @@ const initState = {
 const host = API_SERVER_HOST
 
 const ModifyComponent = ({pno}) => {
+  const {exceptionHandle} = useCustomLogin()
 
   const [product, setProduct] = useState(initState)
 
@@ -38,9 +40,9 @@ const ModifyComponent = ({pno}) => {
 
       setProduct(data)
       setFetching(false)
-    }).catch(() => { setFetching(false); setError('상품을 불러오지 못했습니다. 번호를 확인해 주세요.') })
+    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('상품을 불러오지 못했습니다. 번호를 확인해 주세요.') })
 
-  },[pno])
+  },[pno, exceptionHandle])
 
   const handleChangeProduct = (e) => {
 
@@ -83,7 +85,7 @@ const ModifyComponent = ({pno}) => {
     putOne(pno, formData).then(data => {
       setResult('Modified')
       setFetching(false)
-    }).catch(() => { setFetching(false); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
+    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
 
   }
 
@@ -96,7 +98,7 @@ const ModifyComponent = ({pno}) => {
       setResult("Deleted")
       setFetching(false)
 
-    }).catch(() => { setFetching(false); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
+    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
 
   }
 

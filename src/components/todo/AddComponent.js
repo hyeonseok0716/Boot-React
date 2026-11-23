@@ -1,3 +1,4 @@
+import useCustomLogin from "../../hooks/useCustomLogin";
 import { useState } from "react";
 import { postAdd } from "../../api/todoApi";
 import ResultModal from "../common/ResultModal";
@@ -10,6 +11,7 @@ const initState = {
 }
 
 const AddComponent = () => {
+  const {exceptionHandle} = useCustomLogin()
 
   const [todo, setTodo] = useState({...initState})
   const [error, setError] = useState('')
@@ -36,6 +38,7 @@ const AddComponent = () => {
        setTodo({...initState})
 
     }).catch(e => {
+       exceptionHandle(e)
        console.error(e)
        setError('등록하지 못했습니다. 입력 내용을 확인해 주세요.')
     })

@@ -1,3 +1,4 @@
+import useCustomLogin from "../../hooks/useCustomLogin";
 import { useEffect, useState } from "react"
 import  {getOne} from "../../api/productsApi"
 import { API_SERVER_HOST } from "../../api/todoApi"
@@ -15,6 +16,7 @@ const initState = {
 const host = API_SERVER_HOST
 
 const ReadComponent = ({pno }) => {
+  const {exceptionHandle} = useCustomLogin()
 
   const [product, setProduct] = useState(initState)
 
@@ -33,8 +35,8 @@ const ReadComponent = ({pno }) => {
       setProduct(data)
       setFetching(false)
 
-    }).catch(() => { setFetching(false); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
-  }, [pno])
+    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
+  }, [pno, exceptionHandle])
 
   return (
 

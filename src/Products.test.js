@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
 import { MemoryRouter } from 'react-router-dom';
 import { getList, getOne, postAdd, putOne } from './api/productsApi';
 import ListComponent from './components/products/ListComponent';
@@ -11,6 +13,10 @@ jest.mock('./api/productsApi', () => ({
 }));
 jest.mock('./api/todoApi', () => ({ API_SERVER_HOST: 'http://localhost:8080' }));
 
+
+const testStore = configureStore({ reducer: { loginSlice: () => ({ email: 'user1@aaa.com', accessToken: 'access', refreshToken: 'refresh' }) } });
+const TestRouter = ({children, ...props}) => <Provider store={testStore}><MemoryRouter {...props}>{children}</MemoryRouter></Provider>;
+jest.mock('./api/memberApi', () => ({ loginPost: jest.fn() }));
 const product = { pno: 10, pname: '상품9', pdesc: '상품설명 9', price: 900,
   delFlag: false, uploadFileNames: ['first.jpg', 'second.jpg'] };
 const list = { dtoList: [product], pageNumList: [1], current: 1, prev: false, next: false };
@@ -24,7 +30,7 @@ beforeEach(() => {
 });
 
 test('displays product cards with API thumbnails', async () => {
-  render(<MemoryRouter><ListComponent /></MemoryRouter>);
+  render(<TestRouter><ListComponent /></TestRouter>);
   expect(await screen.findByText('이름: 상품9')).toBeInTheDocument();
   expect(screen.getByText('가격: 900')).toBeInTheDocument();
   expect(screen.getByRole('img')).toHaveAttribute('src', 'http://localhost:8080/api/products/view/s_first.jpg');
@@ -34,19 +40,27 @@ test('displays product cards with API thumbnails', async () => {
 
 test('clears the loading modal after a failed request', async () => {
   getList.mockRejectedValueOnce(new Error('offline'));
-  render(<MemoryRouter><ListComponent /></MemoryRouter>);
+  render(<TestRouter><ListComponent /></TestRouter>);
   expect(await screen.findByRole('alert')).toBeInTheDocument();
+  expect(screen.queryByRole('status')).not.toBeInTheDocument();
+});
+
+test('clears the loading modal after a failed product registration', async () => {
+  postAdd.mockRejectedValueOnce(new Error('offline'));
+  render(<TestRouter><AddComponent /></TestRouter>);
+  fireEvent.click(screen.getByRole('button', { name: 'ADD', exact: true }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('등록하지 못했습니다.');
   expect(screen.queryByRole('status')).not.toBeInTheDocument();
 });
 
 test('uses a fallback image when there is no upload', async () => {
   getList.mockResolvedValueOnce({ ...list, dtoList: [{ ...product, uploadFileNames: [] }] });
-  render(<MemoryRouter><ListComponent /></MemoryRouter>);
+  render(<TestRouter><ListComponent /></TestRouter>);
   expect(await screen.findByRole('img')).toHaveAttribute('src', 'http://localhost:8080/api/products/view/default.jpeg');
 });
 
 test('submits product data and selected files together', async () => {
-  const { container } = render(<MemoryRouter><AddComponent /></MemoryRouter>);
+  const { container } = render(<TestRouter><AddComponent /></TestRouter>);
   fireEvent.change(container.querySelector('[name="pname"]'), { target: { name: 'pname', value: 'Sample Product' } });
   fireEvent.change(container.querySelector('[name="pdesc"]'), { target: { name: 'pdesc', value: 'Description' } });
   fireEvent.change(container.querySelector('[name="price"]'), { target: { name: 'price', value: '1000' } });
@@ -61,7 +75,7 @@ test('submits product data and selected files together', async () => {
 });
 
 test('retains selected images and includes newly selected files on modify', async () => {
-  const { container } = render(<MemoryRouter><ModifyComponent pno="10" /></MemoryRouter>);
+  const { container } = render(<TestRouter><ModifyComponent pno="10" /></TestRouter>);
   await screen.findByDisplayValue('상품9');
   fireEvent.click(screen.getByRole('button', { name: '이미지 1 삭제' }));
   const file = new File(['new'], 'new.jpg', { type: 'image/jpeg' });
