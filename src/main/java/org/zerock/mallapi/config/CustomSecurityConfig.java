@@ -44,7 +44,7 @@ public class CustomSecurityConfig {
 
     http.authorizeHttpRequests(config -> config
         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-        .requestMatchers("/api/member/login", "/api/member/refresh", "/api/products/view/**").permitAll()
+        .requestMatchers("/api/member/login", "/api/member/refresh", "/api/member/kakao", "/api/member/kakao/config", "/api/member/kakao/token", "/api/products/view/**").permitAll()
         .anyRequest().authenticated());
 
     http.sessionManagement(sessionConfig ->  sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

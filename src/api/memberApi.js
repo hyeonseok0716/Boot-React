@@ -1,6 +1,11 @@
 import axios from "axios";
 import { API_SERVER_HOST } from "./apiConfig";
 
+export const modifyMember = async (member) => {
+  const { default: jwtAxios } = await import("../util/jwtUtil");
+  return (await jwtAxios.put(`${host}/modify`, member)).data;
+};
+
 const host = `${API_SERVER_HOST}/api/member`;
 
 export const loginPost = async (loginParam) => {

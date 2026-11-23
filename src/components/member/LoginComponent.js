@@ -1,3 +1,4 @@
+import KakaoLoginComponent from "./KakaoLoginComponent";
 import { useState } from "react"
 import useCustomLogin from "../../hooks/useCustomLogin"
 
@@ -74,6 +75,7 @@ const LoginComponent = () => {
         </div>
       </div>
     </div>
+    <KakaoLoginComponent />
   </form>
   );
 }
