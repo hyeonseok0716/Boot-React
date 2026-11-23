@@ -3,11 +3,15 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { getList, getOne, putOne } from './api/todoApi';
+import cartReducer from './slices/cartSlice';
+import { getCartItems } from './api/cartApi';
 import MainPage from './pages/MainPage';
 import ListPage from './pages/todo/ListPage';
 import ReadPage from './pages/todo/ReadPage';
 import ModifyPage from './pages/todo/ModifyPage';
 import ResultModal from './components/common/ResultModal';
+
+jest.mock('./api/cartApi', () => ({ getCartItems: jest.fn(), postChangeCart: jest.fn() }));
 
 jest.mock('./api/todoApi', () => ({
   getList: jest.fn(), getOne: jest.fn(), postAdd: jest.fn(),
@@ -15,7 +19,7 @@ jest.mock('./api/todoApi', () => ({
 }));
 
 
-const testStore = configureStore({ reducer: { loginSlice: () => ({ email: 'user1@aaa.com', accessToken: 'access', refreshToken: 'refresh' }) } });
+const testStore = configureStore({ reducer: { cartSlice: cartReducer, loginSlice: () => ({ email: 'user1@aaa.com', nickname: 'USER1', accessToken: 'access', refreshToken: 'refresh' }) } });
 const TestRouter = ({children, ...props}) => <Provider store={testStore}><MemoryRouter {...props}>{children}</MemoryRouter></Provider>;
 jest.mock('./api/memberApi', () => ({ loginPost: jest.fn() }));
 const todo = { tno: 33, title: 'Sample Title', writer: 'user1', dueDate: '2023-10-10', complete: false };
@@ -27,6 +31,7 @@ const Location = () => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  getCartItems.mockResolvedValue([]);
   getList.mockResolvedValue(list);
   getOne.mockResolvedValue(todo);
   putOne.mockResolvedValue({ RESULT: 'SUCCESS' });
@@ -34,7 +39,7 @@ beforeEach(() => {
 
 test('renders the common navigation and sidebar', () => {
   render(<TestRouter><MainPage /></TestRouter>);
-  expect(screen.getByText('Sidebar')).toBeInTheDocument();
+  expect(screen.getByText("USER1's Cart")).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Todo' })).toHaveAttribute('href', '/todo/');
 });
 

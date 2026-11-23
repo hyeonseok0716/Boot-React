@@ -1,3 +1,4 @@
+import useCustomCart from "../../hooks/useCustomCart";
 import useCustomLogin from "../../hooks/useCustomLogin";
 import { useEffect, useState } from "react"
 import  {getOne} from "../../api/productsApi"
@@ -16,7 +17,8 @@ const initState = {
 const host = API_SERVER_HOST
 
 const ReadComponent = ({pno }) => {
-  const {exceptionHandle} = useCustomLogin()
+  const {exceptionHandle, loginState, isLogin} = useCustomLogin()
+  const {changeCart, cartItems, cartLoading} = useCustomCart()
 
   const [product, setProduct] = useState(initState)
 
@@ -24,6 +26,12 @@ const ReadComponent = ({pno }) => {
 
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState('')
+
+  const handleClickAddCart = async () => {
+    const addedItem = cartItems.find(item => item.pno === Number(pno))
+    if (addedItem && !window.confirm("이미 추가된 상품입니다. 추가하시겠습니까?")) return
+    await changeCart({email: loginState.email, pno: Number(pno), qty: addedItem ? addedItem.qty + 1 : 1})
+  }
 
   useEffect(() => {
 
@@ -89,6 +97,9 @@ const ReadComponent = ({pno }) => {
       </div>
 
       <div className="flex justify-end p-4">
+        <button type="button" disabled={fetching || cartLoading || !isLogin || !product.pno || Boolean(error)}
+          className="inline-block rounded p-4 m-2 text-xl w-32 text-white bg-green-500"
+          onClick={handleClickAddCart}>Add Cart</button>
         <button type="button"
           className="inline-block rounded p-4 m-2 text-xl w-32  text-white bg-red-500"
           onClick={() => moveToModify(pno)}
