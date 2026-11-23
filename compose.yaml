@@ -1,0 +1,23 @@
+name: react
+
+services:
+  mariadb:
+    image: mariadb:10.11
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+      MARIADB_DATABASE: malldb
+      MARIADB_USER: malldbuser
+      MARIADB_PASSWORD: malldbuser
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mariadb-data:
