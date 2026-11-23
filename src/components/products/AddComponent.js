@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useCustomLogin from "../../hooks/useCustomLogin";
 import { useRef, useState } from "react";
 
@@ -19,7 +20,12 @@ const AddComponent = () => {
   const [product,setProduct] = useState({...initState})
   const uploadRef = useRef()
 
-  const [fetching, setFetching] = useState(false)
+  const queryClient = useQueryClient()
+  const addMutation = useMutation(postAdd, {
+    onSuccess: (data) => { setResult(data.result); queryClient.invalidateQueries({queryKey: ['products/list']}) },
+    onError: (ex) => { exceptionHandle(ex); setError('등록하지 못했습니다. 다시 시도해 주세요.') }
+  })
+  const fetching = addMutation.isLoading
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
 
@@ -48,12 +54,7 @@ const AddComponent = () => {
     console.log(formData)
 
     setError('')
-    setFetching(true)
-
-    postAdd(formData).then(data=> {
-      setFetching(false)
-      setResult(data.result)
-    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('등록하지 못했습니다. 다시 시도해 주세요.') })
+    addMutation.mutate(formData)
   }
 
   const closeModal = () => {

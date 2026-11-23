@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useCustomLogin from "../../hooks/useCustomLogin";
 import { useEffect, useRef, useState } from "react";
 import { getOne, putOne, deleteOne } from "../../api/productsApi";
@@ -18,7 +19,7 @@ const initState = {
 const host = API_SERVER_HOST
 
 const ModifyComponent = ({pno}) => {
-  const {exceptionHandle} = useCustomLogin()
+  const {exceptionHandle, loginState} = useCustomLogin()
 
   const [product, setProduct] = useState(initState)
 
@@ -26,23 +27,29 @@ const ModifyComponent = ({pno}) => {
 
   const {moveToRead, moveToList} = useCustomMove()
 
-  const [fetching, setFetching] = useState(false)
+  const queryClient = useQueryClient()
+  const invalidateProducts = () => {
+    queryClient.invalidateQueries({queryKey: ['products']})
+    queryClient.invalidateQueries({queryKey: ['products/list']})
+    queryClient.invalidateQueries({queryKey: ['cart']})
+  }
+  const handleError = ex => { exceptionHandle(ex); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') }
+  const modMutation = useMutation(formData => putOne(pno, formData), {
+    onSuccess: () => { setResult('Modified'); invalidateProducts() }, onError: handleError
+  })
+  const delMutation = useMutation(() => deleteOne(pno), {
+    onSuccess: () => { setResult('Deleted'); invalidateProducts() }, onError: handleError
+  })
+  const query = useQuery(['products', loginState.email, String(pno)], () => getOne(pno),
+    {staleTime: Infinity, onError: handleError})
+  const fetching = query.isFetching || modMutation.isLoading || delMutation.isLoading
   const [error, setError] = useState('')
 
   const uploadRef = useRef()
 
   useEffect(() => {
-
-    setError('')
-    setFetching(true)
-
-    getOne(pno).then(data => {
-
-      setProduct(data)
-      setFetching(false)
-    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('상품을 불러오지 못했습니다. 번호를 확인해 주세요.') })
-
-  },[pno, exceptionHandle])
+    if (query.data) setProduct({...query.data, uploadFileNames: [...query.data.uploadFileNames]})
+  }, [query.data])
 
   const handleChangeProduct = (e) => {
 
@@ -80,26 +87,13 @@ const ModifyComponent = ({pno}) => {
     }
 
     setError('')
-    setFetching(true)
-
-    putOne(pno, formData).then(data => {
-      setResult('Modified')
-      setFetching(false)
-    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
-
+    modMutation.mutate(formData)
   }
 
   const handleClickDelete = () => {
 
     setError('')
-    setFetching(true)
-    deleteOne(pno).then(data => {
-
-      setResult("Deleted")
-      setFetching(false)
-
-    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
-
+    delMutation.mutate()
   }
 
   const closeModal = () => {

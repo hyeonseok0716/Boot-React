@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import useCustomCart from "../../hooks/useCustomCart";
 import useCustomLogin from "../../hooks/useCustomLogin";
 import { useEffect, useState } from "react"
@@ -20,31 +21,20 @@ const ReadComponent = ({pno }) => {
   const {exceptionHandle, loginState, isLogin} = useCustomLogin()
   const {changeCart, cartItems, cartLoading} = useCustomCart()
 
-  const [product, setProduct] = useState(initState)
 
   const {moveToList, moveToModify} = useCustomMove()
 
-  const [fetching, setFetching] = useState(false)
-  const [error, setError] = useState('')
+  const query = useQuery(['products', loginState.email, String(pno)], () => getOne(pno),
+    {staleTime: 1000 * 10, onError: exceptionHandle})
+  const product = query.data || initState
+  const fetching = query.isFetching
+  const error = query.isError ? '요청을 처리하지 못했습니다. 다시 시도해 주세요.' : ''
 
   const handleClickAddCart = async () => {
     const addedItem = cartItems.find(item => item.pno === Number(pno))
     if (addedItem && !window.confirm("이미 추가된 상품입니다. 추가하시겠습니까?")) return
     await changeCart({email: loginState.email, pno: Number(pno), qty: addedItem ? addedItem.qty + 1 : 1})
   }
-
-  useEffect(() => {
-
-    setError('')
-    setFetching(true)
-
-    getOne(pno).then(data => {
-
-      setProduct(data)
-      setFetching(false)
-
-    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
-  }, [pno, exceptionHandle])
 
   return (
 

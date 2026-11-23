@@ -1,9 +1,8 @@
+import { TestProviders } from './testUtils';
+import queryClient from './util/queryClient';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { getList, getOne, putOne } from './api/todoApi';
-import cartReducer from './slices/cartSlice';
 import { getCartItems } from './api/cartApi';
 import MainPage from './pages/MainPage';
 import ListPage from './pages/todo/ListPage';
@@ -19,8 +18,7 @@ jest.mock('./api/todoApi', () => ({
 }));
 
 
-const testStore = configureStore({ reducer: { cartSlice: cartReducer, loginSlice: () => ({ email: 'user1@aaa.com', nickname: 'USER1', accessToken: 'access', refreshToken: 'refresh' }) } });
-const TestRouter = ({children, ...props}) => <Provider store={testStore}><MemoryRouter {...props}>{children}</MemoryRouter></Provider>;
+const TestRouter = ({children, ...props}) => <TestProviders><MemoryRouter {...props}>{children}</MemoryRouter></TestProviders>;
 jest.mock('./api/memberApi', () => ({ loginPost: jest.fn() }));
 const todo = { tno: 33, title: 'Sample Title', writer: 'user1', dueDate: '2023-10-10', complete: false };
 const list = { dtoList: [todo], pageNumList: [1, 2, 3], current: 3, prev: false, next: false };
@@ -30,6 +28,7 @@ const Location = () => {
 };
 
 beforeEach(() => {
+  queryClient.clear();
   jest.clearAllMocks();
   getCartItems.mockResolvedValue([]);
   getList.mockResolvedValue(list);

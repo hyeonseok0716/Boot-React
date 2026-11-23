@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import useCustomLogin from "../../hooks/useCustomLogin";
 import { useEffect, useState } from "react";
 import { getList } from "../../api/productsApi";
@@ -23,27 +24,15 @@ const initState = {
 }
 
 const ListComponent = () => {
-  const {exceptionHandle} = useCustomLogin()
+  const {exceptionHandle, loginState} = useCustomLogin()
 
   const {page, size, refresh, moveToList, moveToRead} = useCustomMove()
 
-  const [serverData, setServerData] = useState(initState)
-
-  const [fetching, setFetching] = useState(false)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-
-    setError('')
-    setFetching(true)
-
-    getList({page,size}).then(data => {
-      console.log(data)
-      setServerData(data)
-      setFetching(false)
-    }).catch((ex) => { setFetching(false); exceptionHandle(ex); setError('요청을 처리하지 못했습니다. 다시 시도해 주세요.') })
-
-  }, [page,size, refresh, exceptionHandle])
+  const query = useQuery(['products/list', loginState.email, {page, size, refresh}],
+    () => getList({page, size}), {staleTime: 1000 * 5, onError: exceptionHandle})
+  const serverData = query.data || initState
+  const fetching = query.isFetching
+  const error = query.isError ? '요청을 처리하지 못했습니다. 다시 시도해 주세요.' : ''
 
   return (
     <div className="border-2 border-blue-100 mt-10 mr-2 ml-2">

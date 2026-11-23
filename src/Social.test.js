@@ -1,8 +1,8 @@
+import { TestProviders } from './testUtils';
+import queryClient from './util/queryClient';
+import { clearMemberSession, emptyMember, saveMemberSession } from './util/memberSession';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import store from './store';
-import { login, logout } from './slices/loginSlice';
 import { getCookie } from './util/cookieUtil';
 import ModifyComponent from './components/member/ModifyComponent';
 import KakaoRedirectPage from './pages/member/KakaoRedirectPage';
@@ -14,14 +14,14 @@ jest.mock('./api/kakaoApi', () => ({ getAccessToken: jest.fn(), getMemberWithAcc
 
 const member = { email: 'social@aaa.com', nickname: '소셜회원', social: true,
   accessToken: 'test-access', refreshToken: 'test-refresh', roleNames: ['USER'] };
-const wrap = (node) => render(<Provider store={store}><MemoryRouter initialEntries={['/']}>
+const wrap = (node) => render(<TestProviders member={null}><MemoryRouter initialEntries={['/']}>
   <Routes><Route path="/" element={node} /><Route path="/member/modify" element={<div>수정 화면</div>} />
   <Route path="/member/login" element={<div>로그인 화면</div>} /></Routes>
-</MemoryRouter></Provider>);
+</MemoryRouter></TestProviders>);
 
 beforeEach(() => {
   jest.clearAllMocks();
-  store.dispatch(logout());
+  clearMemberSession();
   sessionStorage.clear();
   window.history.replaceState(null, '', '/');
 });
@@ -56,7 +56,7 @@ test('provider failure ends loading and shows a return to login link', async () 
 });
 
 test('modification sends only form fields and the success modal logs out before returning to login', async () => {
-  store.dispatch(login(member));
+  saveMemberSession(member, true);
   modifyMember.mockResolvedValue({ result: 'modified' });
   wrap(<ModifyComponent />);
   expect(screen.getByLabelText('Password')).toHaveValue('');
@@ -68,5 +68,5 @@ test('modification sends only form fields and the success modal logs out before 
   fireEvent.click(screen.getByRole('button', { name: 'Close Modal' }));
   expect(await screen.findByText('로그인 화면')).toBeInTheDocument();
   await waitFor(() => expect(getCookie('member')).toBeUndefined());
-  expect(store.getState().loginSlice.email).toBe('');
+
 });

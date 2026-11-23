@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useState } from "react";
-import { useSelector } from "react-redux";
 import { modifyMember } from "../../api/memberApi";
 import useCustomLogin from "../../hooks/useCustomLogin";
 import ResultModal from "../common/ResultModal";
@@ -9,7 +8,7 @@ const initState = { email: "", pw: "", nickname: "" };
 
 const ModifyComponent = () => {
   const [member, setMember] = useState(initState);
-  const loginInfo = useSelector(state => state.loginSlice);
+  const { loginState: loginInfo } = useCustomLogin();
   const { doLogout, moveToLogin, exceptionHandle } = useCustomLogin();
   const [result, setResult] = useState(false);
   const [pending, setPending] = useState(false);

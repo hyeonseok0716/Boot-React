@@ -1,8 +1,7 @@
 import axios from "axios";
 import { getCookie, setCookie } from "./cookieUtil";
 import { API_SERVER_HOST } from "../api/apiConfig";
-import store from "../store";
-import { login, logout } from "../slices/loginSlice";
+import { clearMemberSession, saveMemberSession, getSessionVersion } from "./memberSession";
 
 const jwtAxios = axios.create();
 let refreshPromise = null;
@@ -26,6 +25,8 @@ const refreshJWT = async (accessToken, refreshToken) => {
 const beforeReq = (config) => {
   const member = getCookie("member");
   if (!member?.email || !member.accessToken || !member.refreshToken) return Promise.reject(requireLogin());
+  if (config._sessionVersion !== undefined && config._sessionVersion !== getSessionVersion()) return Promise.reject(requireLogin());
+  config._sessionVersion = getSessionVersion();
   config.headers = config.headers || {};
   config.headers.Authorization = `Bearer ${member.accessToken}`;
   return config;
@@ -34,13 +35,15 @@ const beforeReq = (config) => {
 const requestFail = (error) => Promise.reject(error);
 
 const retryRequest = async (original) => {
+  if (original && original._sessionVersion !== getSessionVersion()) throw requireLogin();
   const member = getCookie("member");
   if (!original || original._retry || !member?.accessToken || !member.refreshToken) {
-    store.dispatch(logout());
+    clearMemberSession();
     throw requireLogin();
   }
   original._retry = true;
   const session = member.refreshToken;
+  const version = getSessionVersion();
   try {
     if (original.headers.Authorization !== `Bearer ${member.accessToken}`) {
       return await jwtAxios(original);
@@ -48,10 +51,9 @@ const retryRequest = async (original) => {
     if (!refreshPromise) {
       refreshPromise = refreshJWT(member.accessToken, session).then((tokens) => {
         const current = getCookie("member");
-        if (!current || current.refreshToken !== session) throw requireLogin();
+        if (!current || current.refreshToken !== session || getSessionVersion() !== version) throw requireLogin();
         const renewed = { ...current, ...tokens };
-        setCookie("member", JSON.stringify(renewed), 1);
-        store.dispatch(login(renewed));
+        saveMemberSession(renewed);
         return tokens;
       }).finally(() => { refreshPromise = null; });
     }
@@ -59,7 +61,7 @@ const retryRequest = async (original) => {
     original.headers.Authorization = `Bearer ${tokens.accessToken}`;
     return await jwtAxios(original);
   } catch {
-    if (getCookie("member")?.refreshToken === session) store.dispatch(logout());
+    if (getCookie("member")?.refreshToken === session && getSessionVersion() === version) clearMemberSession();
     throw requireLogin();
   }
 };

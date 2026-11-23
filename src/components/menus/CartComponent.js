@@ -1,4 +1,6 @@
 import { useEffect, useMemo } from "react";
+import { useRecoilValue } from "recoil";
+import { cartTotalState } from "../../atoms/cartState";
 import useCustomLogin from "../../hooks/useCustomLogin";
 import useCustomCart from "../../hooks/useCustomCart";
 import CartItemComponent from "../cart/CartItemComponent";
@@ -6,10 +8,7 @@ import CartItemComponent from "../cart/CartItemComponent";
 const CartComponent = () => {
   const { isLogin, loginState } = useCustomLogin();
   const { refreshCart, cartItems, changeCart, cartLoading, cartError } = useCustomCart();
-  const total = useMemo(() => cartItems.reduce((sum, item) => sum + item.price * item.qty, 0), [cartItems]);
-  useEffect(() => {
-    if (isLogin) refreshCart();
-  }, [isLogin, loginState.email, refreshCart]);
+  const total = useRecoilValue(cartTotalState);
   return <div className="w-full">
     {isLogin && <div className="flex flex-col">
       <div className="w-full flex">

@@ -1,8 +1,8 @@
+import { TestProviders } from './testUtils';
+import queryClient from './util/queryClient';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import { MemoryRouter } from 'react-router-dom';
-import { getList, getOne, postAdd, putOne } from './api/productsApi';
+import { getList, getOne, postAdd, putOne, deleteOne } from './api/productsApi';
 import ListComponent from './components/products/ListComponent';
 import AddComponent from './components/products/AddComponent';
 import ModifyComponent from './components/products/ModifyComponent';
@@ -14,19 +14,49 @@ jest.mock('./api/productsApi', () => ({
 jest.mock('./api/todoApi', () => ({ API_SERVER_HOST: 'http://localhost:8080' }));
 
 
-const testStore = configureStore({ reducer: { loginSlice: () => ({ email: 'user1@aaa.com', accessToken: 'access', refreshToken: 'refresh' }) } });
-const TestRouter = ({children, ...props}) => <Provider store={testStore}><MemoryRouter {...props}>{children}</MemoryRouter></Provider>;
+const TestRouter = ({children, ...props}) => <TestProviders><MemoryRouter {...props}>{children}</MemoryRouter></TestProviders>;
 jest.mock('./api/memberApi', () => ({ loginPost: jest.fn() }));
 const product = { pno: 10, pname: '상품9', pdesc: '상품설명 9', price: 900,
   delFlag: false, uploadFileNames: ['first.jpg', 'second.jpg'] };
 const list = { dtoList: [product], pageNumList: [1], current: 1, prev: false, next: false };
 
 beforeEach(() => {
+  queryClient.clear();
   jest.clearAllMocks();
   getList.mockResolvedValue(list);
   getOne.mockResolvedValue({ ...product, uploadFileNames: [...product.uploadFileNames] });
   postAdd.mockResolvedValue({ result: 20 });
   putOne.mockResolvedValue({ RESULT: 'SUCCESS' });
+  deleteOne.mockResolvedValue({ RESULT: 'SUCCESS' });
+});
+
+test('successful registration invalidates a cached product list', async () => {
+  const key = ['products/list', 'user1@aaa.com', {page: 1, size: 10, refresh: false}];
+  queryClient.setQueryData(key, list);
+  render(<TestRouter><AddComponent /></TestRouter>);
+  fireEvent.click(screen.getByRole('button', {name: 'ADD', exact: true}));
+  await screen.findByRole('dialog');
+  expect(queryClient.getQueryState(key).isInvalidated).toBe(true);
+});
+
+test('editing the product form does not mutate the cached product before saving', async () => {
+  const key = ['products', 'user1@aaa.com', '10'];
+  queryClient.setQueryData(key, {...product, uploadFileNames: [...product.uploadFileNames]});
+  render(<TestRouter><ModifyComponent pno="10" /></TestRouter>);
+  fireEvent.change(await screen.findByDisplayValue('상품9'), {target: {name: 'pname', value: 'Unsaved name'}});
+  fireEvent.click(screen.getByRole('button', {name: '이미지 1 삭제'}));
+  expect(queryClient.getQueryData(key).pname).toBe('상품9');
+  expect(queryClient.getQueryData(key).uploadFileNames).toEqual(['first.jpg', 'second.jpg']);
+});
+
+test('successful deletion invalidates the product list and shows the result', async () => {
+  const key = ['products/list', 'user1@aaa.com', {page: 1, size: 10}];
+  queryClient.setQueryData(key, list);
+  render(<TestRouter><ModifyComponent pno="10" /></TestRouter>);
+  await screen.findByDisplayValue('상품9');
+  fireEvent.click(screen.getByRole('button', {name: 'Delete', exact: true}));
+  expect(await screen.findByRole('dialog', {name: 'Deleted'})).toBeInTheDocument();
+  expect(queryClient.getQueryState(key).isInvalidated).toBe(true);
 });
 
 test('displays product cards with API thumbnails', async () => {
