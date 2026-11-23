@@ -19,3 +19,4 @@ yarn-error.log*
 /.gradle/
 /build-java/
 /bin/
+/upload/
