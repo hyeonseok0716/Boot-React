@@ -20,3 +20,4 @@ yarn-error.log*
 /build-java/
 /bin/
 /upload/
+/.jwt-secret
